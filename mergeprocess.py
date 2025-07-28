@@ -25,14 +25,30 @@ def run_latentsync(
     subprocess.run(latentsync_cmd, check=True)
     return temp_out
 
-def merge_audio(latentsync_video, audio_file, final_output):
+def merge_audio(latentsync_video, audio_file, merged_output_tmp):
     merge_cmd = [
-        "ffmpeg", "-i", latentsync_video, "-i", audio_file,
-        "-c", "copy", "-map", "0:v:0", "-map", "1:a:0",
-        "-shortest", final_output
+        "ffmpeg", "-y",
+        "-i", latentsync_video, "-i", audio_file,
+        "-map", "0:v:0", "-map", "1:a:0",
+        "-c:v", "copy", "-c:a", "aac",
+        "-shortest",
+        merged_output_tmp
     ]
-    print("\n[INFO] Merging audio with ffmpeg ...")
+    print("\n[INFO] Merging audio with ffmpeg (aac re-encode)...")
     subprocess.run(merge_cmd, check=True)
+
+def final_reencode_aac(input_file, output_file):
+    reencode_cmd = [
+        "ffmpeg", "-y",
+        "-i", input_file,
+        "-c:v", "copy",
+        "-c:a", "aac",
+        "-strict", "-2",
+        "-movflags", "+faststart",
+        output_file
+    ]
+    print("\n[INFO] Final AAC audio re-encoding for compatibility ...")
+    subprocess.run(reencode_cmd, check=True)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -54,13 +70,21 @@ def main():
         unet_ckpt=args.unet_ckpt,
         steps=args.steps,
         guidance_scale=args.guidance_scale,
-        enable_deepcache=not args.no_deepcache)
+        enable_deepcache=not args.no_deepcache
+    )
 
-    merge_audio(latentsync_video=temp_video, audio_file=args.audio, final_output=args.out)
+    # 1차 병합(오디오 aac로)
+    merged_tmp = args.out + ".merged_tmp.mp4"
+    merge_audio(latentsync_video=temp_video, audio_file=args.audio, merged_output_tmp=merged_tmp)
 
-    if os.path.exists(temp_video):
-        os.remove(temp_video)
-    print(f"\n🎬 변환 및 립싱크+음성 합성 완료! -> {args.out}")
+    # 2차: 혹시라도 PCM/비표준이 들어가면 AAC 재인코딩
+    final_reencode_aac(merged_tmp, args.out)
+
+    # 임시파일 정리
+    for f in [temp_video, merged_tmp]:
+        if os.path.exists(f):
+            os.remove(f)
+    print(f"\n🎬 변환 및 립싱크+음성 합성 완료! (aac 오디오 적용) -> {args.out}")
 
 if __name__ == "__main__":
     main()
