@@ -11,3 +11,5 @@ python mergeprocess.py   --video assets/<your_video>.mp4   --audio assets/<your_
 ```
 
 Tested on LatentSync1.5
+
+Updated : I modified source code so that skipping frames with no faces
