@@ -27,10 +27,9 @@ def run_latentsync(
 
 def merge_audio(latentsync_video, audio_file, merged_output_tmp):
     merge_cmd = [
-        "ffmpeg", "-y",
-        "-i", latentsync_video, "-i", audio_file,
+        "ffmpeg", 
+        "-i", latentsync_video, "-i", audio_file, "-c", "copy",
         "-map", "0:v:0", "-map", "1:a:0",
-        "-c:v", "copy", "-c:a", "aac",
         "-shortest",
         merged_output_tmp
     ]
@@ -43,8 +42,7 @@ def final_reencode_aac(input_file, output_file):
         "-i", input_file,
         "-c:v", "copy",
         "-c:a", "aac",
-        "-strict", "-2",
-        "-movflags", "+faststart",
+        "-strict", "experimental",
         output_file
     ]
     print("\n[INFO] Final AAC audio re-encoding for compatibility ...")

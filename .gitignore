@@ -26,6 +26,8 @@ wandb/
 /detect_results/
 /temp
 /latentsync/
+/musics/
+filelist.txt
 # checkpoint files
 *.safetensors
 *.ckpt
